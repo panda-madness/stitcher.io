@@ -1,3 +1,8 @@
+structure:
+    date: 2019-11-13
+    title: Structure
+    content: src/content/blog/structure.md
+
 laravel-beyond-crud-06-states:
     date: 2019-11-24
     title: "06. States"
