@@ -12,7 +12,7 @@ laravel-beyond-crud-06-states:
     title: "06. States"
     content: src/content/book/06-states.md
     book: true
-    next: laravel-beyond-crud
+    next: laravel-beyond-crud-07-entering-the-application-layer
     meta:
         description: "A blog series about managing larger Laravel projects"
     footnotes:
