@@ -1,17 +1,20 @@
-View models are an abstraction to simplify controller and model code.
-View models are responsible for providing data to a view, 
-which would otherwise come directly from the controller or the model.
+This is the first chapter of my [Laravel beyond CRUD](/blog/laravel-beyond-crud) series where we take a deep dive in the application layer. A major trend throughout the series is to keep code clean, concise and manageable. This chapter won't be any different, as we'll look at how to keep controllers clean and to-the-point. 
+
+The pattern we'll use to help us is called the view model pattern.
+As its name suggests, these classes are models to your view files, they are responsible for providing data to a view, which would otherwise come directly from the controller or the domain model.
 They allow a better separation of concerns, and provide more flexibility for the developer.
 
 In essence, view models are simple classes that take some data, 
 and transform it into something usable for the view.
-In this post I'll show you the basic principles of the pattern, 
+In this chapter I'll show you the basic principles of the pattern, 
 we'll take a look at how they integrate in Laravel projects,
-and finally I'll show you how we use the pattern in one of [Spatie](*https://spatie.be)'s, our company, projects.
+and finally I'll show you how we use the pattern in one of our projects.
 
 {{ ad:carbon }}
 
 Let's get started. 
+
+
 Say you have a form to create a blog post with a category.
 You'll need a way to fill the select box in the view with category options. 
 The controller has to provide those.
@@ -19,8 +22,8 @@ The controller has to provide those.
 ```php
 public function create()
 {
-    return view('blog.form', [
-        'categories' => Category::all(),
+    return <hljs prop>view</hljs>('blog.form', [
+        'categories' => <hljs type>Category</hljs>::<hljs prop>all</hljs>(),
     ]);
 }
 ```
@@ -29,11 +32,11 @@ The above example works for the create method,
 but let's not forget we should also be able to edit existing posts.
 
 ```php
-public function edit(Post $post)
+public function edit(<hljs type>Post</hljs> $post)
 {
-    return view('blog.form', [
+    return <hljs prop>view</hljs>('blog.form', [
         'post' => $post,
-        'categories' => Category::all(),
+        'categories' => <hljs type>Category</hljs>::<hljs prop>all</hljs>(),
     ]);
 }
 ```
@@ -43,10 +46,10 @@ users should be restricted in which categories they are allowed to post in.
 In other words: the category selection should be restricted based on the user.
 
 ```php
-return view('blog.form', [
-    'categories' => Category::allowedForUser(
-        current_user()
-    )->get(),
+return <hljs prop>view</hljs>('blog.form', [
+    'categories' => <hljs type>Category</hljs>::<hljs prop>allowedForUser</hljs>(
+        <hljs prop>current_user</hljs>()
+    )-><hljs prop>get</hljs>(),
 ]);
 ```
 
@@ -62,9 +65,9 @@ class Post extends Model
 {
     public static function allowedCategories(): Collection 
     {
-        return Category::query()
-            ->allowedForUser(current_user())
-            ->get();
+        return <hljs type>Category</hljs>::<hljs prop>query</hljs>()
+            -><hljs prop>allowedForUser</hljs>(<hljs prop>current_user</hljs>())
+            -><hljs prop>get</hljs>();
     }
 }
 ```
@@ -94,29 +97,27 @@ They have one responsibility and one responsibility only: providing the view wit
 ```php
 class PostFormViewModel
 {
-    public function __construct(
-        User $user, 
-        Post $post = null
-    ) {
+    public function __construct(<hljs type>User</hljs> $user, <hljs type>Post</hljs> $post = null) 
+    {
         $this->user = $user;
         $this->post = $post;
     }
     
     public function post(): Post
     {
-        return $this->post ?? new Post();
+        return $this->post ?? new <hljs type>Post</hljs>();
     }
     
     public function categories(): Collection
     {
-        return Category::allowedForUser($this->user)->get();
+        return <hljs type>Category</hljs>::<hljs prop>allowedForUser</hljs>($this->user)-><hljs prop>get</hljs>();
     }
 }
 ```
 
 Let's name a few key features of such a class:
 
-- All dependencies are injected, this gives the most flexibility to the outside.
+- All dependencies are injected, this gives the most flexibility to the outside context.
 - The view model exposes some methods that can be used by the view.
 - There will either be a new or existing post provided by the `post` method, 
 depending on whether your creating or editing a post.
@@ -128,48 +129,43 @@ class PostsController
 {
     public function create()
     {
-        $viewModel = new PostFormViewModel(
-            current_user()
+        $viewModel = new <hljs type>PostFormViewModel</hljs>(
+            <hljs prop>current_user</hljs>()
         );
         
-        return view('blog.form', compact('viewModel'));
+        return <hljs prop>view</hljs>('blog.form', <hljs prop>compact</hljs>('viewModel'));
     }
     
     public function edit(Post $post)
     {
-        $viewModel = new PostFormViewModel(
-            current_user(), 
+        $viewModel = new <hljs type>PostFormViewModel</hljs>(
+            <hljs prop>current_user</hljs>(), 
             $post
         );
     
-        return view('blog.form', compact('viewModel'));
+        return <hljs prop>view</hljs>('blog.form', <hljs prop>compact</hljs>('viewModel'));
     }
 }
 ```
 
 And finally, it can be used in the view like so:
 
-```html
-<input value="{{ $viewModel->post()->title }}" />
-<input value="{{ $viewModel->post()->body }}" />
+```txt
+<<hljs keyword>input</hljs> <hljs prop>value</hljs>="{{ $viewModel-><hljs prop>post</hljs>()->title }}" />
+<<hljs keyword>input</hljs> <hljs prop>value</hljs>="{{ $viewModel-><hljs prop>post</hljs>()->body }}" />
 
-<select>
-    @foreach ($viewModel->categories() as $category)
-        <option value="{{ $category->id }}">
+<<hljs keyword>select</hljs>>
+    @<hljs type>foreach</hljs> ($viewModel-><hljs prop>categories</hljs>() as $category)
+        <<hljs keyword>option</hljs> <hljs prop>value</hljs>="{{ $category->id }}">
             {{ $category->name }}
-        </option>
-    @endforeach
-</select>
-``` 
-
-These are the two benefits of using view models: 
-
-- They encapsulate the logic
-- They can be reused in multiple contexts
+        </<hljs keyword>option</hljs>>
+    @<hljs type>endforeach</hljs>
+</<hljs keyword>select</hljs>>
+```
 
 ## View models in Laravel
 
-The previous example showed a simple class with some methods.
+The previous example showed a simple class with some methods as our view model.
 This is enough to use the pattern,
 but within Laravel projects, there are a few more niceties we can add.
 
@@ -178,28 +174,28 @@ For example, you can pass a view model directly to the `view` function if the vi
 ```php
 public function create()
 {
-    $viewModel = new PostFormViewModel(
-        current_user()
+    $viewModel = new <hljs type>PostFormViewModel</hljs>(
+        <hljs prop>current_user</hljs>()
     );
     
-    return view('blog.form', $viewModel);
+    return <hljs prop>view</hljs>('blog.form', $viewModel);
 }
 ```
 
 The view can now directly use the view model's properties like `$post` and `$categories`.
 The previous example now looks like this:
 
-```html
-<input value="{{ $post->title }}" />
-<input value="{{ $post->body }}" />
+```txt
+<<hljs keyword>input</hljs> <hljs prop>value</hljs>="{{ $post->title }}" />
+<<hljs keyword>input</hljs> <hljs prop>value</hljs>="{{ $post->body }}" />
 
-<select>
-    @foreach ($categories as $category)
-        <option value="{{ $category->id }}">
+<<hljs keyword>select</hljs>>
+    @<hljs type>foreach</hljs> ($categories as $category)
+        <<hljs keyword>option</hljs> <hljs prop>value</hljs>="{{ $category->id }}">
             {{ $category->name }}
-        </option>
-    @endforeach
-</select>
+        </<hljs keyword>option</hljs>>
+    @<hljs type>endforeach</hljs>
+</<hljs keyword>select</hljs>>
 ``` 
 
 You can also return the view model itself as JSON data, by implementing `Responsable`. 
@@ -207,12 +203,12 @@ This can be useful when you're saving the form via an AJAX call,
 and want to repopulate it with up-to-date data after the call is done. 
 
 ```php
-public function update(Request $request, Post $post)
+public function update(<hljs type>Request</hljs> $request, <hljs type>Post</hljs> $post)
 {
     // Update the post…
 
-    return new PostFormViewModel(
-        current_user(),
+    return new <hljs type>PostFormViewModel</hljs>(
+        <hljs prop>current_user</hljs>(),
         $post
     );
 }
@@ -221,7 +217,7 @@ public function update(Request $request, Post $post)
 You might see a similarity between view models and Laravel resources.
 Remember that resources map one-to-one on a model, when view models may provide whatever data they want.
 
-In one of our projects, we're actually using resources in view models!
+In our projects, we're actually using resources and view models combined:
 
 ```php
 class PostViewModel
@@ -230,9 +226,9 @@ class PostViewModel
     
     public function values(): array
     {
-        return PostResource::make(
-            $this->post ?? new Post()
-        )->resolve();
+        return <hljs type>PostResource</hljs>::<hljs prop>make</hljs>(
+            $this->post ?? new <hljs type>Post</hljs>()
+        )-><hljs prop>resolve</hljs>();
     }
 }
 ```
@@ -248,14 +244,14 @@ abstract class ViewModel
     
     public function __get($name): ?string
     {
-        $name = Str::camel($name);
+        $name = <hljs type>Str</hljs>::<hljs prop>camel</hljs>($name);
     
         // Some validation…
     
         $values = $this->{$name}();
     
-        if (! is_string($values)) {
-            return json_encode($values);
+        if (! <hljs prop>is_string</hljs>($values)) {
+            return <hljs prop>json_encode</hljs>($values);
         }
     
         return $values;
@@ -265,38 +261,32 @@ abstract class ViewModel
 
 Instead of calling the view model methods, we can call their property and get a JSON back.
 
-```html
-<select-field
-    label="{{ __('Post category') }}"
-    name="post_category_id"
-    :options="{{ $postViewModel->post_categories }}"
-></select-field>
+```txt
+<<hljs keyword>select-field</hljs>
+    <hljs prop>label</hljs>="{{ __('Post category') }}"
+    <hljs prop>name</hljs>="post_category_id"
+    :<hljs prop>options</hljs>="{{ $postViewModel->post_categories }}"
+></<hljs keyword>select-field</hljs>>
 ```
 
-### Wait, what about view composers?
+## Wait, what about view composers?
 
+You might be thinking there's some overlap with Laravel's view composers, don't be mistaken though. The Laravel documentation explains view composers like so:
 
-Let's look at how view composers are used in Laravel. 
-View composers are a way of binding data to a view from global configuration.
-
-The Laravel documentation explains it like this:
-
-> View composers are callbacks or class methods that are called when a view is rendered. 
-> If you have data that you want to be bound to a view each time that view is rendered, 
-> a view composer can help you organize that logic into a single location.
+> View composers are callbacks or class methods that are called when a view is rendered.  If you have data that you want to be bound to a view each time that view is rendered, a view composer can help you organize that logic into a single location.
  
 View composers are registered like this, the example is taken from the Laravel docs.
 
 ```php
-class ComposerServiceProvider extends ServiceProvider
+class ViewomposerServiceProvider extends ServiceProvider
 {
     public function boot()
     {
-        View::composer(
-            'profile', ProfileComposer::class
+        <hljs type>View</hljs>::<hljs prop>composer</hljs>(
+            'profile', <hljs type>ProfileComposer</hljs>::class
         );
 
-        View::composer('dashboard', function ($view) {
+        <hljs type>View</hljs>::<hljs prop>composer</hljs>('dashboard', function ($view) {
             // …
         });
     }
@@ -314,7 +304,7 @@ class ProfileController
 {
     public function index()
     {
-        return new view('profile');
+        return new <hljs prop>view</hljs>('profile');
     }
 }
 ```
@@ -326,32 +316,10 @@ Now I *know* that this isn't a problem in small projects.
 When you're the single developer and only have 20 controllers and maybe 20 view composers, 
 it'll all fit in your head.
 
-But what about a project with three or four developers, with hundreds of controllers?
-What if you're taking over a legacy project where you don't have this implicit knowledge?
+But what about the kind of projects we're writing about in this series? When you're working with several developers, in a codebase that counts thousands upon thousands lines of code. It won't fit in your head anymore, not on that scale. 
+That's why the view model pattern is the preferred approach. It makes clear from the controller itself what variables are available to the view. On top of that you can re-use the same view model for multiple contexts. 
 
-This is why at [Spatie](*https://spatie.be), we use view models in our larger projects.
-They make everything much more explicit, which helps us keep the code maintainable.
-
-Here's what we do:
-
-```php
-class ProfileController
-{
-    public function index(User $user)
-    {
-        return new view(
-            'profile', 
-            new ProfileViewModel($user)
-        );
-    }
-}
-```
-
-Now it's clear now from the controller itself what variables are available to the view.
-We can also re-use the same view for multiple contexts. 
-An example would be the same form view used in the create and edit actions. 
-
-One last added benefit, one you might not have thought about, 
+One last benefit — one you might not have thought about —  
 is that we can pass data into the view model explicitly. 
 If you want to use a route argument or bound model to determine data passed to the view,
 it is done explicitly.
